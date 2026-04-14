@@ -1,8 +1,8 @@
 import unittest
-from functions import split_nodes_delimiter, split_nodes_image, split_nodes_link
+from functions import split_nodes_delimiter, split_nodes_image, split_nodes_link, text_to_textnodes
 from textnode import TextNode, TextType
 
-class TestSplitNodesDelimiter(unittest.TestCase):
+class TestSplitNodes(unittest.TestCase):
 
     def test_split_bold(self):
         nodes = [TextNode("This is **bold** text", TextType.TEXT)]
@@ -141,3 +141,112 @@ class TestSplitNodesDelimiter(unittest.TestCase):
                 TextNode(" end", TextType.TEXT),
             ],
         )
+
+
+class TestTextToTextNodes(unittest.TestCase):
+
+    def test_text_to_textnodes_plain_text(self):
+        text = "This is plain text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(nodes, [TextNode("This is plain text", TextType.TEXT)])
+
+    def test_text_to_textnodes_bold(self):
+        text = "This is **bold** text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" text", TextType.TEXT),
+            ],
+        )
+
+    def test_text_to_textnodes_italic(self):
+        text = "This is _italic_ text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" text", TextType.TEXT),
+            ],
+        )
+
+    def test_text_to_textnodes_code(self):
+        text = "This is `code` text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("code", TextType.CODE),
+                TextNode(" text", TextType.TEXT),
+            ],
+        )
+
+    def test_text_to_textnodes_image(self):
+        text = "This is ![image](https://example.com/img.png) text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://example.com/img.png"),
+                TextNode(" text", TextType.TEXT),
+            ],
+        )
+
+    def test_text_to_textnodes_link(self):
+        text = "This is [link](https://example.com) text"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://example.com"),
+                TextNode(" text", TextType.TEXT),
+            ],
+        )
+
+    def test_text_to_textnodes_mixed(self):
+        text = "This is **bold** and _italic_ with `code` and ![img](url) and [link](url2)"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("This is ", TextType.TEXT),
+                TextNode("bold", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("italic", TextType.ITALIC),
+                TextNode(" with ", TextType.TEXT),
+                TextNode("code", TextType.CODE),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("img", TextType.IMAGE, "url"),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "url2"),
+            ],
+        )
+
+    def test_text_to_textnodes_multiple_same_type(self):
+        text = "**bold1** and **bold2**"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(
+            nodes,
+            [
+                TextNode("bold1", TextType.BOLD),
+                TextNode(" and ", TextType.TEXT),
+                TextNode("bold2", TextType.BOLD),
+            ],
+        )
+
+    def test_text_to_textnodes_just_italic(self):
+        text = "_italic_"
+        nodes = text_to_textnodes(text)
+        self.assertEqual(nodes, [TextNode("italic", TextType.ITALIC)])
+
+    def test_text_to_textnodes_empty_string(self):
+        text = ""
+        nodes = text_to_textnodes(text)
+        self.assertEqual(nodes, [])
