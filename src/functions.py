@@ -1,7 +1,15 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
 from textnode import TextNode, TextType
 from htmlnode import HTMLNode, LeafNode, ParentNode
 from blocks import BlockType
 import re
+import os
+import shutil
+
+
 
 def extract_markdown_images(text):
     matches = re.findall(r"!\[(.*?)\]\(([^()\s]+(?:\([^()]*\)[^()]*)*)\)", text)
@@ -199,3 +207,54 @@ def markdown_to_html_node(markdown):
         else:
             children.append(block_paragraph_to_html_node(block))
     return ParentNode("div", children)
+
+def copy_files(dir1, dir2):
+    path1 = os.path.abspath(dir1)
+    path2 = os.path.abspath(dir2)
+    if not os.path.exists(path1):
+        raise Exception(f"Directory {dir1} does not exist")
+    if not os.path.isdir(path1):
+        raise Exception (f"{dir1} is not a directory")
+    if os.path.exists(path2):
+        shutil.rmtree(path2)
+        logger.info(f"Removed existing directory: {path2}")
+    if not os.path.exists(path2):
+        os.mkdir(path2)
+        logger.info(f"Created directory: {path2}")
+    for item in os.listdir(path1):
+        item_path1 = os.path.join(path1, item)
+        item_path2 = os.path.join(path2, item)
+        if os.path.isdir(item_path1):
+            logger.info(f"Entering directory: {item_path1}")
+            copy_files(item_path1, item_path2)
+        else:
+            shutil.copy(item_path1, item_path2)
+            logger.info(f"Copied file: {item_path1} -> {item_path2}")
+
+def extract_title(markdown):
+    lines = markdown.split("\n")
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped.startswith("# "):
+            return stripped[2:].strip()
+    raise Exception("H1 header not found")
+
+def generate_page(from_path, template_path, dest_path):
+    print(f"Generating page from {from_path} to {dest_path} using {template_path} template")
+    from_path_abs = os.path.abspath(from_path)
+    template_path_abs = os.path.abspath(template_path)
+    dest_path_abs = os.path.abspath(dest_path)
+    dest_path_dir = os.path.dirname(dest_path_abs)
+    if not os.path.exists(dest_path_dir):
+        os.makedirs(dest_path_dir)
+    with open(from_path_abs, "r+") as f1, open(template_path_abs, "r+") as f2:
+        input = f1.read()
+        template = f2.read()
+        title = extract_title(input)
+        html_node = markdown_to_html_node(input)
+        html_string = html_node.to_html()
+        template_updated = template.replace("{{ Title }}", title)
+        template_updated = template_updated.replace("{{ Content }}", html_string)
+        
+        with open(dest_path_abs, "w") as f3:
+            f3.write(template_updated)
