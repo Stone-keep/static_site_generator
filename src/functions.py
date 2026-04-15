@@ -258,3 +258,19 @@ def generate_page(from_path, template_path, dest_path):
         
         with open(dest_path_abs, "w") as f3:
             f3.write(template_updated)
+
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    content_dir_abs = os.path.abspath(dir_path_content)
+    template_path_abs = os.path.abspath(template_path)
+    dest_dir_abs = os.path.abspath(dest_dir_path)
+    for root, dirs, files in os.walk(content_dir_abs):
+        for file in files:
+            if file.endswith('.md'):
+                src_file = os.path.join(root, file)
+                rel_path = os.path.relpath(root, content_dir_abs)
+                if rel_path == '.':
+                    dest_file = os.path.join(dest_dir_abs, file.replace('.md', '.html'))
+                else:
+                    dest_file = os.path.join(dest_dir_abs, rel_path, file.replace('.md', '.html'))
+                generate_page(src_file, template_path_abs, dest_file)
+       

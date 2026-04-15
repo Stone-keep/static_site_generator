@@ -8,13 +8,13 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-from functions import copy_files, generate_page
+from functions import copy_files, generate_pages_recursive
 
 
 def main():
    
    copy_files("static", "public")
-   generate_page("content/index.md", "template.html", "public/index.html")
+   generate_pages_recursive("content", "template.html", "public")
 
 if __name__ == "__main__":
     main()
