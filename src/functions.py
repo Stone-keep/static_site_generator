@@ -2,12 +2,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-from textnode import TextNode, TextType
-from htmlnode import HTMLNode, LeafNode, ParentNode
-from blocks import BlockType
 import re
 import os
 import shutil
+from textnode import TextNode, TextType
+from htmlnode import HTMLNode, LeafNode, ParentNode
+from blocks import BlockType
 
 
 
@@ -239,7 +239,7 @@ def extract_title(markdown):
             return stripped[2:].strip()
     raise Exception("H1 header not found")
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path} template")
     from_path_abs = os.path.abspath(from_path)
     template_path_abs = os.path.abspath(template_path)
@@ -255,11 +255,13 @@ def generate_page(from_path, template_path, dest_path):
         html_string = html_node.to_html()
         template_updated = template.replace("{{ Title }}", title)
         template_updated = template_updated.replace("{{ Content }}", html_string)
+        template_updated = template_updated.replace('href="/', f'href="{basepath}')
+        template_updated = template_updated.replace('src="/', f'src="{basepath}')
         
         with open(dest_path_abs, "w") as f3:
             f3.write(template_updated)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     content_dir_abs = os.path.abspath(dir_path_content)
     template_path_abs = os.path.abspath(template_path)
     dest_dir_abs = os.path.abspath(dest_dir_path)
@@ -272,5 +274,5 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
                     dest_file = os.path.join(dest_dir_abs, file.replace('.md', '.html'))
                 else:
                     dest_file = os.path.join(dest_dir_abs, rel_path, file.replace('.md', '.html'))
-                generate_page(src_file, template_path_abs, dest_file)
+                generate_page(src_file, template_path_abs, dest_file, basepath)
        
